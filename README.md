@@ -4,9 +4,9 @@ Role Name
 install and subscribe for ansible engine
 
 
-Role Variables
+inventory
 --------------
-
+[ansible-engine]
 
 Example Playbook
 ----------------
