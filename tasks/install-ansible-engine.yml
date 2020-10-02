@@ -1,8 +1,0 @@
----
-
-- name: Install Ansible Engine
-  yum:
-          name:
-                  - python-cryptography
-                  - ansible 
-          state: installed
