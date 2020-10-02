@@ -1,0 +1,142 @@
+---
+- hosts: all
+  become: true
+  ignore_errors: true
+
+  vars: 
+    javaVersion: jdk1.8.0_131
+    javaDownload: https://satellite.cdmx.gob.mx/pub/java/jdk-8u131-linux-x64.tar.gz
+    wildflyDownload: https://satellite.cdmx.gob.mx/pub/wildfly/wildfly-17.0.1.Final.tar.gz
+  tasks:
+
+  - name: Prepare system
+    block:
+      - name: Update system
+        yum:
+          name: "*"
+          state: latest
+
+      - name: setting up firewall ports
+        firewalld:
+          permanent: true
+          immediate: true
+          port: "{{item}}"
+          state: enabled
+        with_items:
+          - 8080/tcp
+          - 9990/tcp
+
+  - name: Java config
+    block:
+      - name: Create a java directory if it does not exist
+        file:
+          path: /opt/apps/java
+          state: directory
+
+      - name: Extract {{javaVersion}} into /opt/apps
+        unarchive:
+          src: "{{javaDownload}}"
+          dest: /opt/apps/java/
+          remote_src: yes
+
+  - name: Install wildfly
+    block:
+      - name: Create group Wildfly
+        group:
+          name: wildfly
+          state: present
+
+      - name: Create user and add to group Wildfly'
+        user:
+          name: wildfly
+          shell: /sbin/nologin
+          home: /opt/apps/wildfly
+          group: wildfly
+
+      - name: Extract wildfly.tgz into /opt/
+        unarchive:
+          src: "{{wildflyDownload}}"
+          dest: /opt/apps/wildfly
+          remote_src: yes
+          extra_opts: [--strip-components=1]
+
+      - name: Ensure JAVA_HOME is set to /opt/apps/java
+        lineinfile:
+          path: /opt/apps/wildfly/bin/standalone.conf
+          regexp: '^#JAVA_HOME='
+          line: JAVA_HOME="/opt/apps/java/{{javaVersion}}"
+
+      - name: Recursively change ownership of a /opt/wildfly
+        file:
+          path: /opt/apps/wildfly
+          state: directory
+          recurse: yes
+          owner: wildfly
+          group: wildfly
+
+  - name: Copy config files for wildfly deploy
+    block:
+
+      - name: Create a directory if it does not exist
+        file:
+          path: /etc/wildfly
+          state: directory
+
+      - name: Copy wildfly.conf with owner and permissions
+        copy:
+          src: /opt/apps/wildfly/docs/contrib/scripts/systemd/wildfly.conf
+          dest: /etc/wildfly/
+          remote_src: yes
+
+      - name: Copy launch.sh with owner and permissions
+        copy:
+          src: /opt/apps/wildfly/docs/contrib/scripts/systemd/launch.sh
+          dest: /opt/apps/wildfly/bin/
+          remote_src: yes
+
+      - name: Copy wildfly.service with owner and permissions
+        copy:
+          src: /opt/apps/wildfly/docs/contrib/scripts/systemd/wildfly.service
+          dest: /etc/systemd/system/
+          remote_src: yes
+    tags:
+      - copyfiles
+  
+  - name: config files
+    block:     
+
+      - name: Ensure WILDFLY_HOME is set to /opt/apps/wildfly
+        lineinfile:
+          path: /opt/apps/wildfly/bin/launch.sh
+          regexp: '[^\s]*WILDFLY_HOME='
+          line: '    WILDFLY_HOME="/opt/apps/wildfly"'
+
+      - name: Ensure ExecStart is set to /opt/apps/wildfly/bin/launch.sh
+        lineinfile:
+          path: /etc/systemd/system/wildfly.service
+          regexp: '^ExecStart='
+          line: ExecStart=/opt/apps/wildfly/bin/launch.sh $WILDFLY_MODE $WILDFLY_CONFIG $WILDFLY_BIND
+      
+      - name: Change launch.sh permissions
+        file:
+          path: /opt/apps/wildfly/bin/launch.sh
+          mode: '+x'
+
+    tags:
+      - configFiles
+      
+  - name: Start services
+    block:
+
+      - name: daemon-reload to pick up config changes
+        systemd:
+          daemon_reload: yes
+
+      - name: start wildfly Service
+        service:
+          name: wildfly
+          state: started
+          enabled: yes
+    tags:
+      - configFiles
+
