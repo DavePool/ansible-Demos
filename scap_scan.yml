@@ -1,0 +1,31 @@
+---
+- name: OpenScap Scan
+  hosts: all
+  vars:
+    oscap_profile: xccdf_org.ssgproject.content_profile_pci-dss
+    oscap_policy: ssg-rhel8-ds
+
+  tasks:
+
+  - name: Install openscap scanner
+    yum:
+      name: 
+        - openscap-scanner
+        - scap-security-guide
+      state: latest
+  
+  - block:
+    - name: Run Scann
+      command: oscap xccdf eval \
+        --profile {{ oscap_profile }} \
+        --results-arf /tmp/oscap-arf.xml \
+        --report /tmp/oscap-report.html \
+        --fetch-remote-resources \
+        /usr/share/xml/scap/ssg/content/{{ oscap_policy }}.xml
+
+    always:
+    - name: Download report
+      fetch:
+        src: /tmp/oscap-report.html
+        dest: ../oscap-reports/{{ inventory_hostname }}.html
+        flat: yes
