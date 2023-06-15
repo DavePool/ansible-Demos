@@ -24,12 +24,9 @@
         --report /tmp/oscap-report.html \
         --fetch-remote-resources \
         /usr/share/xml/scap/ssg/content/{{ oscap_policy }}.xml
-    
-    - debug:
-        msg: scanning....
 
     always:
-    - name: Download report
+    - name: Download reports on {{ scanns_home }}
       fetch:
         src: /tmp/oscap-report.html
         dest: "{{scanns_home}}/{{ inventory_hostname }}.html"
