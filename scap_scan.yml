@@ -28,5 +28,5 @@
     - name: Download report
       fetch:
         src: /tmp/oscap-report.html
-        dest: "{{scanns_home}}/{{ inventory_hostname }}.html
+        dest: "{{scanns_home}}/{{ inventory_hostname }}.html"
         flat: yes
