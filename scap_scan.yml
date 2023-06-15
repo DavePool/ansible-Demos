@@ -34,3 +34,4 @@
         src: /tmp/oscap-report.html
         dest: "{{scanns_home}}/{{ inventory_hostname }}.html"
         flat: yes
+        validate_checksum: true
