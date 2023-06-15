@@ -17,6 +17,7 @@
   
   - block:
     - name: Run Scann
+      ignore_errors: true
       command: oscap xccdf eval \
         --profile {{ oscap_profile }} \
         --results-arf /tmp/oscap-arf.xml \
