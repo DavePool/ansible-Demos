@@ -13,6 +13,7 @@
       name: 
         - openscap-scanner
         - scap-security-guide
+        - openscap-utils
       state: latest
   
   - block:

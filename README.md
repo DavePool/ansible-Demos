@@ -1,7 +1,28 @@
 # Ansible Demos
 
+## Wildfly
 
-## Openscap scanning
+
+
+## OpenScap 
+
+### Manual Scanning
+
+#### Paquetes a instalar
+
+~~~
+sudo yum install -y httpd openscap-scanner openscap-utils scap-security-guide
+
+~~~
+
+#### scap-security-guide
+una vez instalados los paquetes, las guias de seguridad y politicas pueden ser encontradas en:
+
+~~~
+/usr/share/xml/scap/ssg/content
+~~~
+
+### Ansible Scanning
 
 1. Poblar el inventario con los hosts destino
 2. Tener acceso un un usuario privilegiado en este caso se usa root
